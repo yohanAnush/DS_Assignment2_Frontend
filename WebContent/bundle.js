@@ -1,5 +1,12 @@
+// CORS and CURD request configurations.
 axios.defaults.baseURL = 'http://localhost:8081';
-axios.defaults.headers.post['Content-Type'] = 'application/json';   // we only deal with JSON.
+
+let headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Authentication': 0,
+    'ClientId': 0
+};
 
 // for everything but seeing all food items, we need to have the authentication key in the API call.
 // but every time a page is reloaded, bundle.js will run replace the baseURL to the one at line #1(which
@@ -7,7 +14,8 @@ axios.defaults.headers.post['Content-Type'] = 'application/json';   // we only d
 // this is done to maintain the baseURL with authentication key included given that the client has already,
 // being given an authentication key by the server.
 if (localStorage.getItem('authKey') != undefined) {
-    axios.defaults.baseURL = 'http://localhost:8081/' + localStorage.getItem('authKey');
+    headers.Authentication = localStorage.getItem('authKey');
+    headers.ClientId = localStorage.getItem('uid');
 }
 
 // re-directions.
@@ -45,24 +53,29 @@ $('#login-btn-submit').click(function () {
 function logMeIn() {
     // send credentials to the session API.
     let data = {
-        email: 'aliyanage44@gmail.com',
-        password: '123456'
+        email: $('#login-email').val(),
+        password: $('#login-password').val()
     };
 
-    axios.post('/authenticate', data)
+    axios.post('/user/authenticate', data, { headers: headers })
         .then(response => {
             let responseBody = response.data;
 
             if (responseBody.success == true) {
                 // axios anyways store the response body in data. And the json reponse itself has a data attribute which contains the session.
-                localStorage.setItem("authKey", responseBody.data.authKeyOfUid);
-                localStorage.setItem("uid", responseBody.data.uid);
+                localStorage.setItem('authKey', responseBody.data.authKeyOfUid);
+                localStorage.setItem('uid', responseBody.data.uid);
 
-                // we need to modify axios's base url so it now includes the autheKey as well.
-                axios.defaults.baseURL = 'http://localhost:8081/' + responseBody.data.authKeyOfUid;
+                // update the headers.
+                headers.Authentication = localStorage.getItem('authKey');
+                headers.ClientId = localStorage.getItem('uid');
 
                 // hide the login and reg button and replace them with a logout button.
                 $('#login-btn, #reg-btn').hide();
+                $('#logout-btn').show();
+
+                // redirection.
+                window.location.href = 'home.html';
             }
         })
         .catch(rej => {
@@ -74,6 +87,15 @@ $('#logout-btn').click(function () {
    logMeOut();
 });
 function logMeOut() {
+    // tell the server to invoke the authentication key.
+    axios.delete('/user/invoke', { headers: headers })
+        .then(response =>{
+            console.log(response.data);
+        })
+        .catch(rej => {
+            console.log(rej);
+        })
+
     // clear all local storage variables(uid, authKeyOfUid, fid)
     localStorage.clear();
 
@@ -97,7 +119,7 @@ function showFoodItem() {
 
     console.log(axios.defaults.baseURL);
 
-    axios.get('/food/id/' + fId)
+    axios.get('/food/id/' + fId, headers)
         .then(response => {
             let entries = [];
             entries[0] = response.data;
@@ -111,7 +133,8 @@ function showFoodItem() {
 
 // for home page to show all the food items.
 function showFoodItems() {
-    axios.get('/food')
+    console.log(headers);
+    axios.get('/food', { headers: headers })
         .then(response=> {
             let entries = response.data;
             mapFoodResults(entries, 'food-list', true);
@@ -128,7 +151,7 @@ $('#food-search').keypress(function () {
     // remove the current contents of the list first.
     $('#food-list').empty();
 
-    axios.get('/food/' + keyword)
+    axios.get('/food/' + keyword, headers)
         .then(response=> {
             let entries = response.data;
             mapFoodResults(entries, 'food-items', true);
@@ -183,7 +206,7 @@ $('#reg-submit-btn').click(function () {
 
     // make sure to include uid attribute with 0 as its value.
     // otherwise the server will complain about a missing parameter.
-    axios.post('/user', data)
+    axios.post('/user', data, headers)
         .then(response => {
             window.location.href = 'login.html';
         })

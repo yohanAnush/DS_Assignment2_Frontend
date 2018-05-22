@@ -1,12 +1,18 @@
 // CORS and CURD request configurations.
 axios.defaults.baseURL = 'http://localhost:8081';
 
-let headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Authentication': 0,
-    'ClientId': 0
-};
+let headers = {};
+function getHeaders() {
+    headers = {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+        'Authentication': localStorage.getItem("authKey"),
+        'ClientId': localStorage.getItem("uid")
+    };
+
+    return headers;
+}
 
 // for everything but seeing all food items, we need to have the authentication key in the API call.
 // but every time a page is reloaded, bundle.js will run replace the baseURL to the one at line #1(which
@@ -42,6 +48,16 @@ $(document).ready(function () {
         $('#logout-btn').show();
         $('#logged-name').html(uid);
     }
+
+    $('#billPayment').hide(); // credit/debit card payment radio button is going to be selected by default.
+
+    axios.get('/food', { headers: getHeaders() })
+        .then(response => {
+            mapFoodResults(response.data, 'food-list', true);
+        })
+        .catch(reject => {
+            console.log(reject);
+        })
 });
 
 /*
@@ -57,7 +73,7 @@ function logMeIn() {
         password: $('#login-password').val()
     };
 
-    axios.post('/user/authenticate', data, { headers: headers })
+    axios.post('/user/authenticate', data, { headers: getHeaders() })
         .then(response => {
             let responseBody = response.data;
 
@@ -78,8 +94,8 @@ function logMeIn() {
                 window.location.href = 'home.html';
             }
         })
-        .catch(rej => {
-            console.log(rej);
+        .catch(reject => {
+            console.log(reject);
         })
 }
 
@@ -88,12 +104,12 @@ $('#logout-btn').click(function () {
 });
 function logMeOut() {
     // tell the server to invoke the authentication key.
-    axios.delete('/user/invoke', { headers: headers })
+    axios.delete('/user/invoke', { headers: getHeaders() })
         .then(response =>{
             console.log(response.data);
         })
-        .catch(rej => {
-            console.log(rej);
+        .catch(reject => {
+            console.log(reject);
         })
 
     // clear all local storage variables(uid, authKeyOfUid, fid)
@@ -106,20 +122,32 @@ function logMeOut() {
 // when the buy button assigned to a certain food item is clicked.
 // we need to store this on local storage so that all the proceeding pages,
 // know which item is being purchased.
-function buyThisFoodItem(element) {
-    localStorage.setItem('foodItem', element.id);
+function buyThisFoodItem(fId) {
+    localStorage.setItem('foodItem', fId);
     window.location.href = 'buy.html';
 }
 
-
 // for the buying page to show the details.
-function showFoodItem() {
+function showFoodAndUserDetails() {
+    // populate payment form with user's known details.
+    axios.get('http://localhost:8081/user/id/' + localStorage.getItem('uid'), { headers: getHeaders() })
+        .then(response => {
+            let user = response.data;
+
+            $('#email').val(user.email);
+            $('#mobile').val(user.mobileNumber);
+            $('#name').val(user.name);
+            $('#address').val(user.address);
+
+            console.log(user);
+        })
+        .catch(reject => {
+
+        });
+
+    // get the details of the food item the user is buying.
     let fId = localStorage.getItem('foodItem');
-    console.log(fId);
-
-    console.log(axios.defaults.baseURL);
-
-    axios.get('/food/id/' + fId, headers)
+    axios.get('/food/id/' + fId, { headers: getHeaders() })
         .then(response => {
             let entries = [];
             entries[0] = response.data;
@@ -131,10 +159,54 @@ function showFoodItem() {
         })
 }
 
+function makePayment() {
+
+    let paymentType = $("input[name='paymentRadios']:checked").val();
+
+    let data = {
+        pid: 0,
+        uid: localStorage.getItem('uid'),
+        item: localStorage.getItem('foodItem'),
+        paymentType: paymentType,
+        paymentDate: new Date()≤
+    };
+
+    switch (paymentType) {
+        case 'card':
+            let cardDetails = {
+                number: $('#card-number').val(),
+                ccv: $('#ccv').val(),
+                expiry: $('#exp-date').val()
+            };
+            data.paymentDetails = cardDetails;
+            break;
+
+        case 'bill':
+            let billDetails = {
+                handler: 'Dialog',
+                mobile: $('#dialog-number').val(),
+                pin: $('#pin').val()
+            };
+            data.paymentDetails = billDetails;
+            break;
+    }
+
+    console.log(paymentType)
+    console.log(data.paymentDetails);
+    axios.post('/payment', data, { headers: getHeaders() })
+        .then(response => {
+            console.log(response.status);
+        })
+        .catch(reject => {
+
+        });
+
+}
+
 // for home page to show all the food items.
 function showFoodItems() {
     console.log(headers);
-    axios.get('/food', { headers: headers })
+    axios.get('/food', { headers: getHeaders() })
         .then(response=> {
             let entries = response.data;
             mapFoodResults(entries, 'food-list', true);
@@ -151,7 +223,8 @@ $('#food-search').keypress(function () {
     // remove the current contents of the list first.
     $('#food-list').empty();
 
-    axios.get('/food/' + keyword, headers)
+    console.log(getHeaders());
+    axios.get('/food/' + keyword, { headers: getHeaders() })
         .then(response=> {
             let entries = response.data;
             mapFoodResults(entries, 'food-items', true);
@@ -159,6 +232,32 @@ $('#food-search').keypress(function () {
         .catch(rejection => {
 
         });
+});
+
+
+/*
+ * Handling payment.
+ */
+function completePayment() {
+    // collect information from the forms.
+    // common details.
+    let data = {
+
+    }
+    let paymentType = $('[name=paymentRadios]:checked').val();
+    console.log(paymentType);
+}
+
+// show appropriate payment information form depending on which payment type is selected.
+//      1) Credit/Debit Card radio -> cardPayment form
+//      2) Add to Dialog Postpaid Bill radio -> billPayment form.
+// always hide the irrelevant form.
+$('#paymentRadiosCard').click(function () {
+    $('#cardPayment').show();   $('#billPayment').hide();
+});
+
+$('#paymentRadiosBill').click(function () {
+    $('#billPayment').show();   $('#cardPayment').hide();
 });
 
 // Food items retrieved by API call to /food will be mapped to the food-list UL.
@@ -173,14 +272,16 @@ function mapFoodResults(entries, targetHtmlTag, appendBtn) {
     	// id of each list item element should be the food if of the food it
 		// contains.
         let compositeHtmlElement =
-	        '<li id="' + entry.fId + '" class="list-group-item d-flex justify-content-between align-items-center">' +
+	        '<li class="list-group-item d-flex justify-content-between align-items-center">' +
 	        '<p>'+
 	        '<b>' + entry.name + '<b/> <br /><small>' + entry.ingredients + '</small> <br />' +
 	        '<span class="badge badge-primary badge-pill">Rs: ' + entry.price + '/=</span>' +
 	        '</p>';
 	        
         if (appendBtn) {
-        	compositeHtmlElement += '<button type="button" class="btn btn-success" onclick="buyThisFoodItem(' + entry.fId + ');">Buy</button>';
+        	compositeHtmlElement += '<button id="' + entry.fId + '" type="button" class="btn btn-success" onclick="buyThisFoodItem(this.id)">Buy</button>';
+        	// the reason why we append an underscore to the entry.fId's value is, since we give the same value as the id of the LI element,
+            // buyThisFoodItem will get the LI element as a whole as the parameter if we directly pass the fId is its own id as well.
         }
         
         compositeHtmlElement += '</li>';

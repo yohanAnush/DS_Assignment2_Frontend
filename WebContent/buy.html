@@ -10,8 +10,7 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
     <title>Register @ FastFood Online!</title>
 </head>
-<body onload="showFoodItem()">
-
+<body onload="showFoodAndUserDetails()">
 
 <!-- Begin page content -->
 <div>
@@ -22,8 +21,8 @@
                 <span id="logged-name"></span>
                 <button id="login-btn" class="btn btn-sm btn-info" type="button">Login</button>
                 <button id="reg-btn" class="btn btn-sm btn-dark" type="button">Register</button>
-                <button id="logout-btn" class="btn btn-sm btn-danger" type="button">Log out</button>
             </div>
+            <button id="logout-btn" class="btn btn-sm btn-danger" type="button">Log out</button>
         </form>
     </nav>
 </div>
@@ -56,14 +55,14 @@
                     <label>Payment method</label>
 					<div class="form-row">
                         <div class="form-check col-md-6">
-                            <input class="form-check-input" type="radio" name="paymentRadios" id="exampleRadios1" value="card" checked>
-                            <label class="form-check-label" for="exampleRadios1">
+                            <input class="form-check-input" type="radio" name="paymentRadios" id="paymentRadiosCard" value="card" checked>
+                            <label class="form-check-label" for="paymentRadiosCard">
                                 <i class="fas fa-credit-card"></i> Credit/Debit Card
                             </label>
                         </div>
                         <div class="form-check col-md-6">
-                            <input class="form-check-input" type="radio" name="paymentRadios" id="exampleRadios2" value="bill">
-                            <label class="form-check-label" for="exampleRadios2">
+                            <input class="form-check-input" type="radio" name="paymentRadios" id="paymentRadiosBill" value="bill">
+                            <label class="form-check-label" for="paymentRadiosBill">
                                 <i class="fas fa-mobile-alt"></i> Add to Dialog Postpaid Bill
                             </label>
                         </div>
@@ -78,11 +77,11 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="email">Expiry Date</label>
-                            <input type="email" class="form-control" id="exp-date" placeholder="09/19">
+                            <label for="exp-date">Expiry Date</label>
+                            <input type="text" class="form-control" id="exp-date" placeholder="09/19">
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="mobile">CCV</label>
+                            <label for="ccv">CCV</label>
                             <input type="text" class="form-control" id="ccv" placeholder="123">
                         </div>
                     </div>
@@ -90,23 +89,19 @@
 
                 <!-- payment details for dialog bill -->
                 <div id="billPayment" class="form-group">
-                    <div class="form-group">
-                        <label for="name">Card Number</label>
-                        <input type="text" class="form-control" id="dialog-number" placeholder="077 000 0000">
-                    </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
-                            <label for="email">Expiry Date</label>
-                            <input type="email" class="form-control" id="" placeholder="09/19">
+                            <label for="dialog-number">Dialog Mobile Number</label>
+                            <input type="number" class="form-control" id="dialog-number" placeholder="09/19">
                         </div>
                         <div class="form-group col-md-6">
-                            <label for="mobile">CCV</label>
-                            <input type="text" class="form-control" id="pin" placeholder="1234">
+                            <label for="pin">Pin</label>
+                            <input type="number" class="form-control" id="pin" placeholder="1234">
                         </div>
                     </div>
                 </div>
 
-			  <button type="submit" class="btn btn-primary btn-block" onClick="proceedToPayment()">Proceed to payment</button>
+			  <button type="submit" class="btn btn-primary btn-block" onclick="makePayment();">Proceed to payment</button>
 			</form>
     	</li>
     </ul>

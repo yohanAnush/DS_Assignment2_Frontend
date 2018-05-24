@@ -1,6 +1,21 @@
 // CORS and CURD request configurations.
 axios.defaults.baseURL = 'http://localhost:8081';
 
+// cart variables.
+// we initially push the fId of each food item selected, which can lead to the same fId,
+// being present more than once, hence we need to get the count of each fId's occurrences to,
+// determine the count that the each foodItem has being selected.
+let foodItems = [];
+
+function countFoodItems(foodItems) {
+    let countedFoodItems = foodItems.reduce((prev, cur) => {
+       prev[cur] = (prev[cur] || 0) + 1;
+       return prev;
+    }, {});
+
+    return countedFoodItems;
+}
+
 let headers = {};
 function getHeaders() {
     headers = {
@@ -31,12 +46,18 @@ $('#login-btn').click(function () {
 $('#reg-btn').click(function () {
     window.location.href = 'reg.html';
 });
+$('#checkout-btn').click(function () {
+    window.location.href = 'buy.html';
+});
+
 
 /*
  * Initial executions. These happen right away when a page is loaded.
  */
 $(document).ready(function () {
     let uid = localStorage.getItem("uid");
+
+    $('#checkout-btn').hide();  // enable if an item is selected.
 
     // show login,logout and register buttons appropriately.
     if (uid == undefined) {
@@ -91,7 +112,7 @@ function logMeIn() {
                 $('#logout-btn').show();
 
                 // redirection.
-                window.location.href = 'home.html';
+                window.location.href = responseBody.redirect;
             }
         })
         .catch(reject => {
@@ -122,9 +143,14 @@ function logMeOut() {
 // when the buy button assigned to a certain food item is clicked.
 // we need to store this on local storage so that all the proceeding pages,
 // know which item is being purchased.
-function buyThisFoodItem(fId) {
-    localStorage.setItem('foodItem', fId);
-    window.location.href = 'buy.html';
+function addToCart(fId) {
+    foodItems.push(fId);
+    localStorage.setItem('foodItems', JSON.stringify(countFoodItems(foodItems)));
+
+    // let the user know.
+    alert("Item added to the cart");
+    // show the payment button.
+    $('#checkout-btn').val('Pay for ' + foodItems.length + ' item(s).').show();
 }
 
 // for the buying page to show the details.
@@ -144,33 +170,22 @@ function showFoodAndUserDetails() {
         .catch(reject => {
 
         });
-
-    // get the details of the food item the user is buying.
-    let fId = localStorage.getItem('foodItem');
-    axios.get('/food/id/' + fId, { headers: getHeaders() })
-        .then(response => {
-            let entries = [];
-            entries[0] = response.data;
-            console.log(entries);
-            mapFoodResults(entries, 'food-item', false);
-        })
-        .catch(rejection => {
-
-        })
 }
 
 function makePayment() {
 
     let paymentType = $("input[name='paymentRadios']:checked").val();
 
+    // basic information.
     let data = {
         pid: 0,
         uid: localStorage.getItem('uid'),
-        item: localStorage.getItem('foodItem'),
         paymentType: paymentType,
-        paymentDate: new Date()≤
+        paymentDate: new Date(),
+        itemsAndCounts: JSON.parse(localStorage.getItem('foodItems'))
     };
 
+    // payment information.
     switch (paymentType) {
         case 'card':
             let cardDetails = {
@@ -192,15 +207,20 @@ function makePayment() {
     }
 
     console.log(paymentType)
-    console.log(data.paymentDetails);
+    console.log(data);
     axios.post('/payment', data, { headers: getHeaders() })
         .then(response => {
-            console.log(response.status);
+            let data = response.data;
+            if (data.success == true) {
+                localStorage.setItem('pid', data.pid.toString());
+                foodItems = [];
+                localStorage.setItem('foodItems', '');  // we need to erase the food items from local storage since the checkout has completed.
+            }
+            window.location.href = data.redirect;
         })
         .catch(reject => {
-
+            console.log(reject)
         });
-
 }
 
 // for home page to show all the food items.
@@ -277,20 +297,26 @@ function mapFoodResults(entries, targetHtmlTag, appendBtn) {
 	        '<b>' + entry.name + '<b/> <br /><small>' + entry.ingredients + '</small> <br />' +
 	        '<span class="badge badge-primary badge-pill">Rs: ' + entry.price + '/=</span>' +
 	        '</p>';
-	        
+
         if (appendBtn) {
-        	compositeHtmlElement += '<button id="' + entry.fId + '" type="button" class="btn btn-success" onclick="buyThisFoodItem(this.id)">Buy</button>';
+        	compositeHtmlElement += '<button id="' + entry.fId + '" type="button" class="btn btn-success" onclick="addToCart(this.id)">Buy</button>';
         	// the reason why we append an underscore to the entry.fId's value is, since we give the same value as the id of the LI element,
             // buyThisFoodItem will get the LI element as a whole as the parameter if we directly pass the fId is its own id as well.
         }
-        
+
         compositeHtmlElement += '</li>';
 	        // when we call the onClick function, it will actually get the whole
 			// <li> element as the parameter since,
 	        // li element has the fId as its id.
-        
+
         $('#' + targetHtmlTag).append(compositeHtmlElement);
     })
+}
+
+/* * Validations * */
+function validateCardNumber(cardNumber) {
+    // based on http://www.validcreditcardnumber.com/
+
 }
 
 // POST the reg details to the server.

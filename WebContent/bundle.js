@@ -94,7 +94,6 @@ $(document).ready(function () {
     else {
         $('#login-btn, #reg-btn').hide();
         $('#logout-btn').show();
-        $('#logged-name').html(uid);
     }
 
     $('#billPayment').hide(); // credit/debit card payment radio button is going to be selected by default.
@@ -396,3 +395,75 @@ function checkForAlphaNumericOnly(str) {
     let pattern = /^([a-zA-Z0-9 _-]+)$/;
     return str.match(pattern);
 }
+
+$('#reg-name').keypress(function () {
+    let value = $('#reg-name').val();
+    let elem = $('#reg-name');
+
+    if (value != null && checkForAlphabeticOnly(value)) {
+        elem.addClass('border border-success').removeClass('border-danger');
+    }
+    else {
+        elem.addClass('border border-danger').removeClass('border-success');
+    }
+});
+
+$('#reg-mobile').keypress(function () {
+    let value = $('#reg-mobile').val();
+    let elem = $('#reg-mobile');
+
+    if (value != null && checkForNumericOnly(value)) {
+        elem.addClass('border border-success').removeClass('border-danger');
+    }
+    else {
+        elem.addClass('border border-danger').removeClass('border-success');
+    }
+});
+
+$('#card-number').keypress(function () {
+   let value = $('#card-number').val();
+   let elem = $('#card-number');
+
+    if (value != null && checkForNumericOnly(value)) {
+        elem.addClass('border border-success').removeClass('border-danger');
+    }
+    else {
+        elem.addClass('border border-danger').removeClass('border-success');
+    }
+});
+
+$('#ccv').keypress(function () {
+    let value = $('#ccv').val();
+    let elem = $('#ccv');
+
+    if (value != null && checkForNumericOnly(value)) {
+        elem.addClass('border border-success').removeClass('border-danger');
+    }
+    else {
+        elem.addClass('border border-danger').removeClass('border-success');
+    }
+});
+
+$('#dialog-number').keypress(function () {
+    let value = $('#dialog-number').val();
+    let elem = $('#dialog-number');
+
+    if (value != null && checkForNumericOnly(value)) {
+        elem.addClass('border border-success').removeClass('border-danger');
+    }
+    else {
+        elem.addClass('border border-danger').removeClass('border-success');
+    }
+});
+
+$('#pin').keypress(function () {
+    let value = $('#pin').val();
+    let elem = $('#pin');
+
+    if (value != null && checkForNumericOnly(value)) {
+        elem.addClass('border border-success').removeClass('border-danger');
+    }
+    else {
+        elem.addClass('border border-danger').removeClass('border-success');
+    }
+});

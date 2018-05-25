@@ -29,7 +29,9 @@
 
 <div role="main" class="container col-md-6">
     <br /> <br />
-    Your are ordering:
+    <div class="alert alert-warning" role="alert">
+        <h6>Your are payinng Rs : <span id="amount"></span></h6>
+    </div>
     <ul id="food-item" class="list-group">
     	<li class="list-group-item">
     		<form>
@@ -97,7 +99,7 @@
                         <div class="form-group col-md-6">
                             <label for="pin">Pin</label>
                             <input type="number" class="form-control" id="pin" placeholder="1234">
-                            <button type="button" class="btn btn-success btn-sm">Request Pin</button>
+                            <button id="pin-btn" type="button" class="btn btn-success btn-sm">Request Pin</button>
                         </div>
                     </div>
                 </div>

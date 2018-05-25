@@ -18,7 +18,7 @@ function countFoodItems(foodItems) {
 
 let headers = {};
 function getHeaders() {
-    headers = {
+    let headers = {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Credentials': true,
@@ -47,9 +47,36 @@ $('#reg-btn').click(function () {
     window.location.href = 'reg.html';
 });
 $('#checkout-btn').click(function () {
-    window.location.href = 'buy.html';
+    if (localStorage.getItem('authKey') != undefined && localStorage.getItem('uid') != undefined) {
+        window.location.href = 'buy.html';
+    }
+    else {
+        window.location.href = 'login.html';
+    }
 });
 
+
+$('#reg-btn-submit').click(function () {
+   let data = {
+       uid: 0,
+       name: $('#reg-name').val(),
+       email: $('#reg-email').val(),
+       address: $('#reg-address').val(),
+       mobileNumber: $('#reg-mobile').val(),
+       unhashedPassword: $('#reg-password').val()
+   };
+
+   axios.post('/user', data, { headers: getHeaders() })
+       .then(response => {
+           console.log(response.status);
+           if (response.status == 500) {
+               alert("Please fill all the fields.");
+           }
+           window.location.href = response.data.redirect;
+       })
+       .catch(reject => {
+       });
+});
 
 /*
  * Initial executions. These happen right away when a page is loaded.
@@ -72,13 +99,9 @@ $(document).ready(function () {
 
     $('#billPayment').hide(); // credit/debit card payment radio button is going to be selected by default.
 
-    axios.get('/food', { headers: getHeaders() })
-        .then(response => {
-            mapFoodResults(response.data, 'food-list', true);
-        })
-        .catch(reject => {
-            console.log(reject);
-        })
+    $('#food-list').empty();
+    showFoodItems();
+    getAmountToPay();
 });
 
 /*
@@ -172,6 +195,23 @@ function showFoodAndUserDetails() {
         });
 }
 
+function getAmountToPay() {
+    let data = (JSON).parse(localStorage.getItem('foodItems'));
+
+    axios.post('/payment/total', data, { headers: getHeaders() })
+        .then(response => {
+            $('#amount').html(response.data.amount);
+        })
+        .catch(reject => {
+
+        });
+}
+
+$('#pin-btn').click(function () {
+   alert('Your pin is: 1234');
+   // we aren't sending the pin to a mobile phone so we just display it here :(
+});
+
 function makePayment() {
 
     let paymentType = $("input[name='paymentRadios']:checked").val();
@@ -216,6 +256,8 @@ function makePayment() {
                 foodItems = [];
                 localStorage.setItem('foodItems', '');  // we need to erase the food items from local storage since the checkout has completed.
             }
+
+            if (data.redirect == 'home.html') { alert('Success! Redirecting to home.'); }
             window.location.href = data.redirect;
         })
         .catch(reject => {
@@ -225,7 +267,6 @@ function makePayment() {
 
 // for home page to show all the food items.
 function showFoodItems() {
-    console.log(headers);
     axios.get('/food', { headers: getHeaders() })
         .then(response=> {
             let entries = response.data;
@@ -288,9 +329,11 @@ $('#paymentRadiosBill').click(function () {
 // @param entries
 // json array containing food items.
 function mapFoodResults(entries, targetHtmlTag, appendBtn) {
-    entries.forEach(entry => {
-    	// id of each list item element should be the food if of the food it
+    for (let i = 0; i < entries.length; i++) {
+    	// id of each list item element should be the food if of the food it,
 		// contains.
+        let entry = entries[i];
+        console.log(i);
         let compositeHtmlElement =
 	        '<li class="list-group-item d-flex justify-content-between align-items-center">' +
 	        '<p>'+
@@ -310,13 +353,7 @@ function mapFoodResults(entries, targetHtmlTag, appendBtn) {
 	        // li element has the fId as its id.
 
         $('#' + targetHtmlTag).append(compositeHtmlElement);
-    })
-}
-
-/* * Validations * */
-function validateCardNumber(cardNumber) {
-    // based on http://www.validcreditcardnumber.com/
-
+    }
 }
 
 // POST the reg details to the server.
@@ -342,5 +379,20 @@ $('#reg-submit-btn').click(function () {
             // server accepts the POST data.
             window.location.href = 'login.html';
         });
-
 });
+
+
+/* * Validations * */
+function checkForNumericOnly(str) {
+    return !isNaN(parseFloat(str)) && isFinite(str);
+}
+
+function checkForAlphabeticOnly(str) {
+    let pattern = /^[A-Za-z]+$/;
+    return str.match(pattern);
+}
+
+function checkForAlphaNumericOnly(str) {
+    let pattern = /^([a-zA-Z0-9 _-]+)$/;
+    return str.match(pattern);
+}

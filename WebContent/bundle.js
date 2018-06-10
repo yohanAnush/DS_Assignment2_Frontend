@@ -55,6 +55,9 @@ $('#checkout-btn').click(function () {
     }
 });
 
+function redirectToHome() {
+	window.location.href = 'home.html';
+}
 
 $('#reg-btn-submit').click(function () {
    let data = {

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>Test</title>
-</head>
-<body>
-<h1>Hello</h1>
-</body>
+<script>
+    function redirectToHome() {
+        window.location.href = 'home.html';
+    }
+</script>
+<!-- Used as a redirection since all my main content is on home.html but web server in eclipse seems to default to using index.html as the first page. -->
+<body onload="redirectToHome()")></body>
 </html>
